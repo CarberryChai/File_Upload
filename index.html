@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>File upload</title>
+    <link rel="stylesheet" href="./main.css" />
+    <link
+      rel="stylesheet"
+      href="//at.alicdn.com/t/font_827272_dl1dytthzc8.css"
+    />
+  </head>
+  <body>
+    <h1 class="title">File upload</h1>
+    <div class="box-container">
+      <div class="box__input">
+        <span class="iconfont icon-UploadCloud"></span>
+        <input type="file" id="file" hidden />
+        <label for="file" class="label">
+          <span class="choose__file">Choose a file</span>
+          <span> or drag it here</span>
+        </label>
+      </div>
+      <div class="preview"></div>
+    </div>
+    <div class="upload-container">
+      <button class="btn" id="btn">
+        <span id="loading"></span> <span>Upload</span>
+      </button>
+    </div>
+    <script>
+      const box = document.querySelector('.box__input')
+      const file_btn = box.querySelector('#file')
+      const preview = document.querySelector('.preview')
+      const btn = document.querySelector('#btn')
+      let realFile
+      file_btn.addEventListener('change', function (event) {
+        const file = event.target.files[0]
+        // 1 << 20 equal to 1MB
+        if (file.size > 5 * (1 << 20)) {
+          window.alert('The file size is over 5 MB')
+          return
+        }
+        realFile = file
+        dealFile(file)
+      })
+      // click upload button to upload
+      btn.addEventListener('click', function () {
+        const loading = this.querySelector('#loading')
+        if (realFile) {
+          const data = new FormData()
+          data.append('file', realFile)
+          this.disabled = true
+          loading.classList.add('loading')
+          debugger
+          fetch('/api/upload', {
+            method: 'post',
+            body: data,
+          })
+            .then(res => res.json())
+            .then(console.log)
+            .finally(() => {
+              this.disabled = false
+              loading.classList.remove('loading')
+            })
+        }
+      })
+      ;[
+        'drag',
+        'dragstart',
+        'dragend',
+        'dragover',
+        'dragenter',
+        'dragleave',
+        'drop',
+      ].forEach(function (item) {
+        box.addEventListener(item, preventDefault)
+      })
+      box.addEventListener('drop', function (event) {
+        const file = event.dataTransfer.files[0]
+        realFile = file
+        dealFile(file)
+      })
+      // prevent the default event
+      function preventDefault(e) {
+        e.preventDefault()
+        if (['dragenter', 'dragover'].includes(e.type)) {
+          this.classList.add('drag_active')
+        } else if (['dragleave', 'drop', 'dragend'].includes(e.type)) {
+          this.classList.remove('drag_active')
+        }
+      }
+      function dealFile(file) {
+        const reader = new FileReader()
+        reader.onload = function () {
+          preview.style.backgroundImage = `url(${this.result})`
+        }
+        reader.readAsDataURL(file)
+      }
+    </script>
+  </body>
+</html>
